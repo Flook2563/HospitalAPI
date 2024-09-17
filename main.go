@@ -14,6 +14,7 @@ func main() {
 	staffGroup := router.Group("/staff")
 	{
 		staffGroup.POST("/create", api.CreateStaff)
+		staffGroup.POST("/login", api.LoginStaff)
 	}
 
 	router.Run(":8080")

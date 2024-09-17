@@ -16,15 +16,15 @@ func ConnectDatabase() {
 	dsn := "host=localhost user=hospital_user password=hospital_password dbname=hospital_db port=5433 sslmode=disable"
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("ไม่สามารถเชื่อมต่อฐานข้อมูลได้:", err)
+		log.Fatal("Connect Database Fail ! :", err)
 	} else {
-		fmt.Println("เชื่อมต่อฐานข้อมูลสำเร็จ")
+		fmt.Println("Connect Database Success !")
 	}
 
 	err = DB.AutoMigrate(&models.Staff{}, &models.Hospital{}, &models.Patient{})
 	if err != nil {
-		log.Fatal("ไม่สามารถทำการ AutoMigrate ได้:", err)
+		log.Fatal("AutoMigrate Fail ! :", err)
 	} else {
-		fmt.Println("AutoMigrate สำเร็จ")
+		fmt.Println("AutoMigrate Success !")
 	}
 }
