@@ -23,6 +23,12 @@ func CreateStaff(c *gin.Context) {
 		return
 	}
 
+	var existingStaff models.Staff
+	if err := config.DB.Where("username = ?", InputStaff.Username).First(&existingStaff).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username already taken"})
+		return
+	}
+
 	var hospital models.Hospital
 	if err := config.DB.Where("name = ?", InputStaff.Hospital).First(&hospital).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Hospital Not Found !"})
@@ -41,6 +47,12 @@ func CreateStaff(c *gin.Context) {
 		return
 	}
 
+	//ดึงข้อมูลของโรงพยาบาลใส่ลงในตอน response
+	if err := config.DB.Preload("Hospital").First(&staff, staff.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusCreated, gin.H{"staff": staff})
 
 }
@@ -50,6 +62,7 @@ func LoginStaff(c *gin.Context) {
 	var InputStaff struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
+		Hospital string `json:"hospital"`
 	}
 
 	if err := c.ShouldBindJSON(&InputStaff); err != nil {
@@ -64,6 +77,12 @@ func LoginStaff(c *gin.Context) {
 
 	if err := bcrypt.CompareHashAndPassword([]byte(staff.Password), []byte(InputStaff.Password)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Password invalid !"})
+		return
+	}
+
+	var hospital models.Hospital
+	if err := config.DB.Where("id = ? AND name = ?", staff.HospitalID, InputStaff.Hospital).First(&hospital).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Hospital invalid !"})
 		return
 	}
 
