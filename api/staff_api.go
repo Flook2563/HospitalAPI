@@ -2,12 +2,29 @@ package api
 
 import (
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/Flook2563/Hospitalapi/config"
 	"github.com/Flook2563/Hospitalapi/models"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
+
+func GenerateJWT(staffID uint, hospitalID uint) (string, error) {
+	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"staff_id":    staffID,
+		"hospital_id": hospitalID,
+		"exp":         time.Now().Add(time.Hour * 24).Unix(),
+	})
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
+}
 
 func CreateStaff(c *gin.Context) {
 	var InputStaff struct {
@@ -86,6 +103,15 @@ func LoginStaff(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Login Success"})
+	token, err := GenerateJWT(staff.ID, hospital.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token can not Create !"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login Success",
+		"token":   token,
+	})
 
 }
