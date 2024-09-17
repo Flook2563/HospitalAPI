@@ -10,16 +10,31 @@ import (
 )
 
 func CreateStaff(c *gin.Context) {
-	var staff models.Staff
-	if err := c.ShouldBindJSON(&staff); err != nil {
+	var InputStaff struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+		Hospital string `json:"hospital"`
+	}
+
+	if err := c.ShouldBindJSON(&InputStaff); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
 
-	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(staff.Password), 10)
-	staff.Password = string(hashPassword)
+	var hospital models.Hospital
+	if err := config.DB.Where("name = ?", InputStaff.Hospital).First(&hospital).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Hospital Not Found !"})
+		return
+	}
+
+	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(InputStaff.Password), 10)
+	staff := models.Staff{
+		Username:   InputStaff.Username,
+		Password:   string(hashPassword),
+		HospitalID: hospital.ID,
+	}
 
 	if err := config.DB.Create(&staff).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
